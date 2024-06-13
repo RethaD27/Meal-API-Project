@@ -1,7 +1,25 @@
-* {
-  padding: 0;
-  margin: 0;
-  box-sizing: border-box;
+/* Add these to your style.css */
+
+:root {
+  --bg-color-light: #fff;
+  --text-color-light: #000;
+  --bg-color-dark: #333;
+  --text-color-dark: #fff;
+}
+
+body.light-mode {
+  background-color: var(--bg-color-light);
+  color: var(--text-color-light);
+}
+
+body.dark-mode {
+  background-color: var(--bg-color-dark);
+  color: var(--text-color-dark);
+}
+
+.dark-mode .card {
+  background: rgb(54, 54, 54);
+  color: rgb(255, 255, 255);
 }
 
 .items-container {
@@ -42,12 +60,22 @@ img {
   width: 300px;
 }
 
-.meal-details {
-  text-align: center;
-  margin: 20px;
+.card button {
+  background-color: transparent;
+  border: 1px solid #ccc;
+  padding: 5px 10px;
+  cursor: pointer;
+  margin-top: 10px;
 }
 
-.meal-details img {
-  width: 50%;
-  height: auto;
+.card button:hover {
+  background-color: #ddd;
+}
+
+.dark-mode .card button {
+  border: 1px solid #555;
+}
+
+.dark-mode .card button:hover {
+  background-color: #666;
 }
