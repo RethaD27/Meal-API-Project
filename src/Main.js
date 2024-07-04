@@ -6,6 +6,11 @@ function Main() {
   const [items, setItems] = useState([]);
   const [darkMode, setDarkMode] = useState(false);
   const [favorites, setFavorites] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [sortOption, setSortOption] = useState("name");
+  const [selectedMeal, setSelectedMeal] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   useEffect(() => {
     axios
@@ -44,28 +49,120 @@ function Main() {
     localStorage.setItem("favorites", JSON.stringify(updatedFavorites));
   };
 
-  const itemslist = items.map((meal) => (
-    <section className="card" key={meal.idMeal}>
-      <img src={meal.strMealThumb} alt={meal.strMeal} />
-      <section className="content">
-        <p>{meal.strMeal}</p>
-        <p>#{meal.idMeal}</p>
-        <button onClick={() => toggleFavorite(meal)}>
-          {favorites.some((fav) => fav.idMeal === meal.idMeal)
-            ? "Unfavorite"
-            : "Favorite"}
-        </button>
-      </section>
-    </section>
-  ));
+  const handleSearch = (event) => {
+    setSearchTerm(event.target.value);
+  };
+
+  const handleMealClick = (meal) => {
+    setSelectedMeal(meal);
+  };
+
+  const closeModal = () => {
+    setSelectedMeal(null);
+  };
+
+  const paginate = (pageNumber) => setCurrentPage(pageNumber);
+
+  const filteredItems = items.filter((meal) =>
+    meal.strMeal.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const sortedItems = [...filteredItems].sort((a, b) => {
+    if (sortOption === "name") {
+      return a.strMeal.localeCompare(b.strMeal);
+    } else if (sortOption === "id") {
+      return a.idMeal - b.idMeal;
+    }
+    return 0;
+  });
+
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = sortedItems.slice(indexOfFirstItem, indexOfLastItem);
 
   return (
     <div>
       <button onClick={toggleDarkMode}>
         {darkMode ? "Light Mode" : "Dark Mode"}
       </button>
-      <div className="items-container">{itemslist}</div>
+      <input
+        type="text"
+        placeholder="Search for a meal"
+        value={searchTerm}
+        onChange={handleSearch}
+      />
+      <select
+        onChange={(e) => setSortOption(e.target.value)}
+        value={sortOption}
+      >
+        <option value="name">Sort by Name</option>
+        <option value="id">Sort by ID</option>
+      </select>
+      {selectedMeal && (
+        <div className="modal">
+          <div className="modal-content">
+            <span className="close" onClick={closeModal}>
+              &times;
+            </span>
+            <h2>{selectedMeal.strMeal}</h2>
+            <img src={selectedMeal.strMealThumb} alt={selectedMeal.strMeal} />
+            <p>ID: {selectedMeal.idMeal}</p>
+            {/* Add more meal details here */}
+          </div>
+        </div>
+      )}
+      <div className="items-container">
+        {currentItems.length > 0 ? (
+          currentItems.map((meal) => (
+            <section
+              className="card"
+              key={meal.idMeal}
+              onClick={() => handleMealClick(meal)}
+            >
+              <img src={meal.strMealThumb} alt={meal.strMeal} />
+              <section className="content">
+                <p>{meal.strMeal}</p>
+                <p>#{meal.idMeal}</p>
+                <button onClick={() => toggleFavorite(meal)}>
+                  {favorites.some((fav) => fav.idMeal === meal.idMeal)
+                    ? "Unfavorite"
+                    : "Favorite"}
+                </button>
+              </section>
+            </section>
+          ))
+        ) : (
+          <p>No meals found.</p>
+        )}
+      </div>
+      <Pagination
+        itemsPerPage={itemsPerPage}
+        totalItems={sortedItems.length}
+        paginate={paginate}
+      />
     </div>
+  );
+}
+
+function Pagination({ itemsPerPage, totalItems, paginate }) {
+  const pageNumbers = [];
+
+  for (let i = 1; i <= Math.ceil(totalItems / itemsPerPage); i++) {
+    pageNumbers.push(i);
+  }
+
+  return (
+    <nav>
+      <ul className="pagination">
+        {pageNumbers.map((number) => (
+          <li key={number} className="page-item">
+            <a onClick={() => paginate(number)} href="!#" className="page-link">
+              {number}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </nav>
   );
 }
 
