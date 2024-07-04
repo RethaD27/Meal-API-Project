@@ -123,7 +123,12 @@ function Main() {
               <section className="content">
                 <p>{meal.strMeal}</p>
                 <p>#{meal.idMeal}</p>
-                <button onClick={() => toggleFavorite(meal)}>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toggleFavorite(meal);
+                  }}
+                >
                   {favorites.some((fav) => fav.idMeal === meal.idMeal)
                     ? "Unfavorite"
                     : "Favorite"}
