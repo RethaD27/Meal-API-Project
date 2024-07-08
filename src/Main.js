@@ -1,15 +1,20 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 import "./style.css";
+import AdvancedSearch from "./AdvancedSearch"; // Import AdvancedSearch component
 
 function Main() {
   const [items, setItems] = useState([]);
   const [darkMode, setDarkMode] = useState(false);
   const [favorites, setFavorites] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const [category, setCategory] = useState("");
+  const [area, setArea] = useState("");
   const [sortOption, setSortOption] = useState("name");
   const [selectedMeal, setSelectedMeal] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const itemsPerPage = 10;
 
   useEffect(() => {
@@ -17,9 +22,12 @@ function Main() {
       .get("https://www.themealdb.com/api/json/v1/1/filter.php?c=Seafood")
       .then((res) => {
         setItems(res.data.meals);
+        setLoading(false);
       })
       .catch((err) => {
         console.log(err);
+        setError("Failed to fetch meals");
+        setLoading(false);
       });
 
     const savedDarkMode = JSON.parse(localStorage.getItem("darkMode"));
@@ -53,6 +61,12 @@ function Main() {
     setSearchTerm(event.target.value);
   };
 
+  const handleAdvancedSearch = ({ searchTerm, category, area }) => {
+    setSearchTerm(searchTerm);
+    setCategory(category);
+    setArea(area);
+  };
+
   const handleMealClick = (meal) => {
     setSelectedMeal(meal);
   };
@@ -63,9 +77,12 @@ function Main() {
 
   const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
-  const filteredItems = items.filter((meal) =>
-    meal.strMeal.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredItems = items
+    .filter((meal) =>
+      meal.strMeal.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+    .filter((meal) => (category ? meal.strCategory === category : true))
+    .filter((meal) => (area ? meal.strArea === area : true));
 
   const sortedItems = [...filteredItems].sort((a, b) => {
     if (sortOption === "name") {
@@ -85,6 +102,7 @@ function Main() {
       <button onClick={toggleDarkMode}>
         {darkMode ? "Light Mode" : "Dark Mode"}
       </button>
+      <AdvancedSearch onSearch={handleAdvancedSearch} />
       <input
         type="text"
         placeholder="Search for a meal"
@@ -111,35 +129,41 @@ function Main() {
           </div>
         </div>
       )}
-      <div className="items-container">
-        {currentItems.length > 0 ? (
-          currentItems.map((meal) => (
-            <section
-              className="card"
-              key={meal.idMeal}
-              onClick={() => handleMealClick(meal)}
-            >
-              <img src={meal.strMealThumb} alt={meal.strMeal} />
-              <section className="content">
-                <p>{meal.strMeal}</p>
-                <p>#{meal.idMeal}</p>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    toggleFavorite(meal);
-                  }}
-                >
-                  {favorites.some((fav) => fav.idMeal === meal.idMeal)
-                    ? "Unfavorite"
-                    : "Favorite"}
-                </button>
+      {loading ? (
+        <div className="loading">Loading...</div>
+      ) : error ? (
+        <div className="error">{error}</div>
+      ) : (
+        <div className="items-container">
+          {currentItems.length > 0 ? (
+            currentItems.map((meal) => (
+              <section
+                className="card"
+                key={meal.idMeal}
+                onClick={() => handleMealClick(meal)}
+              >
+                <img src={meal.strMealThumb} alt={meal.strMeal} />
+                <section className="content">
+                  <p>{meal.strMeal}</p>
+                  <p>#{meal.idMeal}</p>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleFavorite(meal);
+                    }}
+                  >
+                    {favorites.some((fav) => fav.idMeal === meal.idMeal)
+                      ? "Unfavorite"
+                      : "Favorite"}
+                  </button>
+                </section>
               </section>
-            </section>
-          ))
-        ) : (
-          <p>No meals found.</p>
-        )}
-      </div>
+            ))
+          ) : (
+            <p>No meals found.</p>
+          )}
+        </div>
+      )}
       <Pagination
         itemsPerPage={itemsPerPage}
         totalItems={sortedItems.length}
@@ -161,7 +185,7 @@ function Pagination({ itemsPerPage, totalItems, paginate }) {
       <ul className="pagination">
         {pageNumbers.map((number) => (
           <li key={number} className="page-item">
-            <a onClick={() => paginate(number)} href="!#" className="page-link">
+            <a onClick={() => paginate(number)} href="#!" className="page-link">
               {number}
             </a>
           </li>
